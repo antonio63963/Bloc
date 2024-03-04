@@ -2,8 +2,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bloc/bloc.dart';
-import 'package:bloc_first/bloc.dart';
+import 'package:bloc_first/bloc/bloc_actions.dart';
+import 'package:bloc_first/bloc/person.dart';
+import 'package:bloc_first/bloc/persons_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:developer' as devtools show log;
@@ -59,17 +60,23 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               ElevatedButton(
                   onPressed: () {
-                    context
-                        .read<PersonsBloc>()
-                        .add(const LoadPersonsAction(url: PersonUrl.persons1));
+                    context.read<PersonsBloc>().add(
+                          const LoadPersonsAction(
+                            url: persons1Url,
+                            loader: getPersons,
+                          ),
+                        );
                   },
                   child: const Text("JSON 1")),
               const SizedBox(width: 24),
               ElevatedButton(
                   onPressed: () {
-                    context
-                        .read<PersonsBloc>()
-                        .add(const LoadPersonsAction(url: PersonUrl.persons2));
+                    context.read<PersonsBloc>().add(
+                          const LoadPersonsAction(
+                            url: persons2Url,
+                            loader: getPersons,
+                          ),
+                        );
                   },
                   child: const Text("JSON 2")),
             ],
@@ -102,4 +109,13 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+}
+
+Future<Iterable<Person>> getPersons(String url) {
+  return HttpClient()
+      .getUrl(Uri.parse(url))
+      .then((req) => req.close())
+      .then((res) => res.transform(utf8.decoder).join())
+      .then((str) => json.decode(str) as List<dynamic>)
+      .then((list) => list.map((p) => Person.fromMap(p)));
 }
