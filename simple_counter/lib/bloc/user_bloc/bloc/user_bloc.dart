@@ -15,12 +15,12 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     subCounterBloc = counterBloc.stream.listen((event) {
       print('COunterState in UserBloc: ${event.count}');
       if (event.count == 0) {
-        // add(GetJobsEvent(count: 0));
-        add(GetUsersEvent(count: 0));
+        add(ResetUserBloc());  
       }
     });
     on<GetUsersEvent>(getUsers);
     on<GetJobsEvent>(getJobs);
+    on<ResetUserBloc>(reset);
   }
 
   @override
@@ -57,5 +57,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       ),
     );
     emit(state.copyWith(isJobsLoading: false, jobs: jobs));
+  }
+
+  void reset(ResetUserBloc event, Emitter<UserState> emit) async {
+    emit(state.copyWith(users: [], jobs: []));
   }
 }

@@ -4,6 +4,7 @@ import 'package:simple_counter/bloc/actions_counter.dart';
 import 'package:simple_counter/bloc/bloc_counter.dart';
 import 'package:simple_counter/bloc/state_counter.dart';
 import 'package:simple_counter/bloc/user_bloc/bloc/user_bloc.dart';
+import 'package:simple_counter/jobs_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,22 +17,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final counterBloc = CounterBloc();
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (context) => counterBloc,
-          ),
-          BlocProvider(
-            create: (context) => UserBloc(counterBloc),
-          ),
-        ],
-        child: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => counterBloc,
+        ),
+        BlocProvider(
+          create: (context) => UserBloc(counterBloc),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
     );
   }
@@ -50,6 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final counterBloc = BlocProvider.of<CounterBloc>(context);
+    final userBloc = BlocProvider.of<UserBloc>(context);
 
     return SafeArea(
       child: Scaffold(
@@ -109,31 +111,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
             // jobs
             TextButton(
-              onPressed: () => context
-                  .read<UserBloc>()
-                  .add(GetJobsEvent(count: counterBloc.state.count)),
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                              value: userBloc,
+                              child: const JobsScreen(),
+                            )));
+                context
+                    .read<UserBloc>()
+                    .add(GetJobsEvent(count: counterBloc.state.count));
+              },
               child: const Text('Jobs: '),
-            ),
-            BlocBuilder<UserBloc, UserState>(
-              builder: ((context, state) {
-                print("STATE: ${state.toString()}");
-                if (state.isJobsLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else {
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.jobs.length,
-                    itemBuilder: (_, idx) {
-                      final u = state.jobs[idx];
-                      return ListTile(
-                        title: Text(u.title),
-                        subtitle: Text(u.id),
-                      );
-                    },
-                  );
-                }
-              }),
             ),
           ],
         ),

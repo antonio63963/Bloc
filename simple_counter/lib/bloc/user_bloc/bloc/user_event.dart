@@ -12,3 +12,5 @@ class GetJobsEvent extends UserEvent {
   final int count;
   GetJobsEvent({required this.count});
 }
+
+class ResetUserBloc extends UserEvent {}
