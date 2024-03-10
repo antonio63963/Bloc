@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (context) => counterBloc,
+          lazy: false,
         ),
         BlocProvider(
           create: (context) => UserBloc(counterBloc),
@@ -48,6 +49,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool isOpened = false;
+
   @override
   Widget build(BuildContext context) {
     final counterBloc = BlocProvider.of<CounterBloc>(context);
@@ -55,77 +59,99 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return SafeArea(
       child: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text(widget.title),
         ),
-        body: ListView(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () =>
-                      context.read<CounterBloc>().add(IncreaseAction()),
-                  icon: const Icon(Icons.add),
+        body: BlocListener<CounterBloc, StateCounter>(
+          listener: (context, state) {
+            print(isOpened);
+            if (state.count <= 0) {
+              Scaffold.of(context).showBottomSheet(
+                (context) => Container(
+                  height: 100,
+                  color: Colors.amber,
+                  child: Text("WOW"),
                 ),
-                const SizedBox(width: 20),
-                Text(context.watch<CounterBloc>().state.count.toString()),
-                const SizedBox(width: 20),
-                IconButton(
-                  onPressed: () =>
-                      context.read<CounterBloc>().add(DecreaseAction()),
-                  icon: const Icon(Icons.minimize),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: () => context
-                  .read<UserBloc>()
-                  .add(GetUsersEvent(count: counterBloc.state.count)),
-              child: const Text('Users: '),
-            ),
-            BlocBuilder<UserBloc, UserState>(
-              builder: ((context, state) {
-                final users =
-                    context.select((UserBloc bloc) => bloc.state.users);
-                if (state.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else {
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: users.length,
-                    itemBuilder: (_, idx) {
-                      final u = users[idx];
-                      return ListTile(
-                        title: Text(u.name),
-                        subtitle: Text(u.id),
-                      );
-                    },
-                  );
-                }
-              }),
-            ),
+              );
 
-            // jobs
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                              value: userBloc,
-                              child: const JobsScreen(),
-                            )));
-                context
+              isOpened = true;
+            }
+            if (state.count > 0 && isOpened) {
+              isOpened = false;
+
+              Navigator.pop(context);
+            }
+          },
+          child: ListView(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () =>
+                        context.read<CounterBloc>().add(IncreaseAction()),
+                    icon: const Icon(Icons.add),
+                  ),
+                  const SizedBox(width: 20),
+                  Text(context.watch<CounterBloc>().state.count.toString()),
+                  const SizedBox(width: 20),
+                  IconButton(
+                    onPressed: () =>
+                        context.read<CounterBloc>().add(DecreaseAction()),
+                    icon: const Icon(Icons.minimize),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => context
                     .read<UserBloc>()
-                    .add(GetJobsEvent(count: counterBloc.state.count));
-              },
-              child: const Text('Jobs: '),
-            ),
-          ],
+                    .add(GetUsersEvent(count: counterBloc.state.count)),
+                child: const Text('Users: '),
+              ),
+              BlocBuilder<UserBloc, UserState>(
+                builder: ((context, state) {
+                  final users =
+                      context.select((UserBloc bloc) => bloc.state.users);
+                  if (state.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else {
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: users.length,
+                      itemBuilder: (_, idx) {
+                        final u = users[idx];
+                        return ListTile(
+                          title: Text(u.name),
+                          subtitle: Text(u.id),
+                        );
+                      },
+                    );
+                  }
+                }),
+              ),
+
+              // jobs
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                                value: userBloc,
+                                child: const JobsScreen(),
+                              )));
+                  context
+                      .read<UserBloc>()
+                      .add(GetJobsEvent(count: counterBloc.state.count));
+                },
+                child: const Text('Jobs: '),
+              ),
+            ],
+          ),
         ),
       ),
     );
